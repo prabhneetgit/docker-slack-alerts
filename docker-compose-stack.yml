@@ -193,7 +193,7 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
     expose:
-      - 9090
+      - 9080
     networks:
       - monitor
     labels:
@@ -289,7 +289,7 @@ services:
     container_name: caddy
     ports:
       - "3000:3000"
-      - "9090:9090"
+      - "9080:9080"
       - "9093:9093"
       - "9091:9091"
     volumes:
