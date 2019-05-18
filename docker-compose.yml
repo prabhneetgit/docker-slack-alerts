@@ -1,0 +1,198 @@
+version: '2'
+
+services:
+  config-server:
+    image: prabhneetdocker/spring-petclinic-config-server
+    container_name: config-server
+    mem_limit: 512M
+    ports:
+     - 8888:8888
+    networks:
+     - monitor
+
+  discovery-server:
+    image: prabhneetdocker/spring-petclinic-discovery-server
+    container_name: discovery-server
+    mem_limit: 512M
+    depends_on:
+      - config-server
+    entrypoint: ["./dockerize","-wait=tcp://config-server:8888","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+    ports:
+     - 8761:8761
+    networks:
+     - monitor
+
+  customers-service:
+    image: prabhneetdocker/spring-petclinic-customers-service
+    container_name: customers-service
+    mem_limit: 512M
+    depends_on:
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+    ports:
+     - 8085:8085
+    networks:
+     - monitor
+
+  visits-service:
+    image: prabhneetdocker/spring-petclinic-visits-service
+    container_name: visits-service
+    mem_limit: 512M
+    depends_on:
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+    ports:
+     - 8082:8082
+    networks:
+     - monitor
+
+  vets-service:
+    image: prabhneetdocker/spring-petclinic-vets-service
+    container_name: vets-service
+    mem_limit: 512M
+    depends_on:
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+    ports:
+     - 8083:8083
+    networks:
+     - monitor
+
+  api-gateway:
+    image: prabhneetdocker/spring-petclinic-api-gateway
+    container_name: api-gateway
+    mem_limit: 512M
+    depends_on:
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+    ports:
+     - 8080:8080
+    networks:
+     - monitor
+
+  tracing-server:
+    image: openzipkin/zipkin
+    container_name: tracing-server
+    mem_limit: 512M
+    environment:
+    - JAVA_OPTS=-XX:+UnlockExperimentalVMOptions -Djava.security.egd=file:/dev/./urandom
+    ports:
+     - 9411:9411
+    networks:
+     - monitor
+
+  admin-server:
+    image: prabhneetdocker/spring-petclinic-admin-server
+    container_name: admin-server
+    mem_limit: 512M
+    depends_on:
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+    ports:
+     - 9090:9090
+    networks:
+     - monitor
+
+  hystrix-dashboard:
+    image: prabhneetdocker/spring-petclinic-hystrix-dashboard
+    container_name: hystrix-dashboard
+    mem_limit: 512M
+    depends_on:
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+    ports:
+     - 7979:7979
+    networks:
+     - monitor
+
+  ## Grafana / Prometheus
+
+  grafana-server:
+    build: ./docker/grafana
+    container_name: grafana-server
+    mem_limit: 256M
+    ports:
+    - 3000:3000
+    networks:
+     - monitor
+
+  prometheus-server:
+    build: ./docker/prometheus
+    container_name: prometheus-server
+    mem_limit: 256M
+    ports:
+    - 9091:9090
+    networks:
+     - monitor
+
+   ## Elastisearch / Logstash  / Kibana
+   
+  elasticsearch:
+    build:
+      context: elasticsearch/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    container_name: elasticsearch    
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx512M -Xms512M"
+    # ports:
+    #   - 9200:9200
+    networks:
+      - monitor
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:5.6.1
+    environment:
+      - xpack.security.enabled=false
+      - LOGSPOUT=ignore
+    container_name: logstash  
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    command: logstash -f /usr/share/logstash/pipeline/logstash.conf
+    networks:
+      - monitor
+    depends_on:
+      - elasticsearch  
+
+  kibana:
+     build:
+      context: kibana/
+      args:
+        ELK_VERSION: $ELK_VERSION
+     container_name: kibana   
+     ports:
+        - 5601:5601
+     networks:
+       - monitor
+     depends_on:
+      - elasticsearch
+
+  logspout:
+     image: gliderlabs/logspout:v3.2.3
+     environment:
+       - SYSLOG_FORMAT=rfc3164
+     container_name: logspout  
+     volumes:
+       - /var/run/docker.sock:/var/run/docker.sock
+     command: syslog://logstash:51415
+     networks:
+       - monitor
+       
+  filebeat:
+    build:
+      context: filebeat/
+    container_name: filebeat
+    networks:
+      - monitor       
+
+networks:
+  monitor:
