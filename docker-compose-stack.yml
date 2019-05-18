@@ -74,7 +74,7 @@ services:
      - discovery-server
     entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
     ports:
-     - 8088:8088
+     - 8088:8080
     networks:
      - monitor
 
@@ -98,7 +98,7 @@ services:
      - discovery-server
     entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
     ports:
-     - 9099:9099
+     - 9070:9090
     networks:
      - monitor
 
@@ -140,7 +140,7 @@ services:
       - LOGSPOUT=ignore
     container_name: logstash  
     volumes:
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     command: logstash -f /usr/share/logstash/pipeline/logstash.conf
     networks:
       - monitor
@@ -193,7 +193,7 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
     expose:
-      - 9090
+      - 9080:9090
     networks:
       - monitor
     labels:
@@ -290,7 +290,7 @@ services:
     container_name: caddy
     ports:
       - "3000:3000"
-      - "9090:9090"
+      - "9080:9090"
       - "9093:9093"
       - "9091:9091"
     volumes:
