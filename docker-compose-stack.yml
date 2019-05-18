@@ -246,7 +246,7 @@ services:
       #- /cgroup:/cgroup:ro #doesn't work on MacOS only for Linux
     restart: unless-stopped
     expose:
-      - 8080
+      - 8088
     networks:
       - monitor
     labels:
@@ -259,8 +259,9 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/datasources:/etc/grafana/datasources
       - ./grafana/dashboards:/etc/grafana/dashboards
-      - ./grafana/setup.sh:/setup.sh
+      - ./grafana/setup.sh:/setup.sh:ro
     entrypoint: /setup.sh
+    user: root
     environment:
       - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
