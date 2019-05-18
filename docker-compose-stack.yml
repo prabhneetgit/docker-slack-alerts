@@ -74,7 +74,7 @@ services:
      - discovery-server
     entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
     ports:
-     - 8080:8080
+     - 8088:8088
     networks:
      - monitor
 
@@ -98,7 +98,7 @@ services:
      - discovery-server
     entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
     ports:
-     - 9090:9090
+     - 9099:9099
     networks:
      - monitor
 
@@ -193,7 +193,7 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
     expose:
-      - 9080
+      - 9090
     networks:
       - monitor
     labels:
@@ -246,7 +246,7 @@ services:
       #- /cgroup:/cgroup:ro #doesn't work on MacOS only for Linux
     restart: unless-stopped
     expose:
-      - 8088
+      - 8080
     networks:
       - monitor
     labels:
@@ -290,7 +290,7 @@ services:
     container_name: caddy
     ports:
       - "3000:3000"
-      - "9080:9080"
+      - "9090:9090"
       - "9093:9093"
       - "9091:9091"
     volumes:
