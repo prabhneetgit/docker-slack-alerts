@@ -193,7 +193,7 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
     expose:
-      - 9080:9090
+      - 9090
     networks:
       - monitor
     labels:
